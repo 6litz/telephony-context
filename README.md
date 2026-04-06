@@ -1,5 +1,7 @@
 # telephony_context
 
+[![pub package](https://img.shields.io/pub/v/telephony_context.svg)](https://pub.dev/packages/telephony_context)
+
 Android-only Flutter plugin that exposes basic **Telephony / SIM context** for antifraud-style risk signals, **without showing runtime permission prompts** and **without** reading IMEI, IMSI, ICCID, phone number, or other sensitive identifiers.
 
 ## Features
