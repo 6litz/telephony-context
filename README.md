@@ -1,0 +1,128 @@
+# telephony_context
+
+Android-only Flutter plugin that exposes basic **Telephony / SIM context** for antifraud-style risk signals, **without showing runtime permission prompts** and **without** reading IMEI, IMSI, ICCID, phone number, or other sensitive identifiers.
+
+## Features
+
+Returns a single snapshot with:
+
+| Field | Meaning |
+|-------|---------|
+| `simCountryIso` | SIM country ISO (normalized lower-case when present) |
+| `networkCountryIso` | Current registered network country ISO |
+| `simOperator` | SIM MCC+MNC (e.g. `21407`) |
+| `simOperatorName` | SIM operator display name |
+| `networkOperator` | Current network MCC+MNC |
+| `networkOperatorName` | Current network operator name |
+| `phoneType` | `none`, `gsm`, `cdma`, `sip`, or `unknown` |
+| `hasTelephonyFeature` | `PackageManager.FEATURE_TELEPHONY` |
+| `hasTelephonySubscriptionFeature` | `FEATURE_TELEPHONY_SUBSCRIPTION` (safe `false` if unavailable) |
+| `isSupported` | `true` when Android returned a payload; `false` on non-Android |
+
+Optional: `toJsonWithCollectedAt()` adds a **Dart-side** UTC timestamp (`collectedAt`) for logging.
+
+## Requirements
+
+- Flutter (current stable channel)
+- **Android only** — `minSdk` **21+**
+- The plugin does **not** declare `READ_PHONE_STATE`, location, SMS, or phone-number permissions. Do not add those for this API.
+
+Values may be **`null`** on devices without SIM, without network, on tablets, emulators, or under OEM / API restrictions. Some `TelephonyManager` getters may throw `SecurityException` on certain OS versions; those fields are cleared and the rest still returned.
+
+## Install
+
+```yaml
+dependencies:
+  telephony_context: ^0.1.0
+```
+
+For a path dependency during development:
+
+```yaml
+dependencies:
+  telephony_context:
+    path: ../
+```
+
+**Android namespace:** the plugin registers as `io.github.telephony_context` (Kotlin package / manifest). Forks should use their own `homepage` / `repository` in `pubspec.yaml` (see [CONTRIBUTING](https://github.com/6litz/telephony-context/blob/main/CONTRIBUTING.md)).
+
+## Usage
+
+```dart
+import 'package:telephony_context/telephony_context.dart';
+
+Future<void> load() async {
+  final TelephonyContext context = await TelephonyContextPlugin.getContext();
+  print(context.toJson());
+
+  final Map<String, dynamic> map = await TelephonyContextPlugin.getContextAsMap();
+  print(map);
+}
+```
+
+Example with a collection timestamp (Dart only):
+
+```dart
+final TelephonyContext ctx = await TelephonyContextPlugin.getContext();
+print(ctx.toJsonWithCollectedAt());
+```
+
+## Example result (illustrative)
+
+```json
+{
+  "simCountryIso": "es",
+  "networkCountryIso": "es",
+  "simOperator": "21407",
+  "simOperatorName": "Movistar",
+  "networkOperator": "21407",
+  "networkOperatorName": "Movistar",
+  "phoneType": "gsm",
+  "hasTelephonyFeature": true,
+  "hasTelephonySubscriptionFeature": true,
+  "isSupported": true
+}
+```
+
+On desktop / iOS / web, `getContext()` returns an object with `isSupported: false` and string fields `null` (fail-safe, no thrown error).
+
+## Limitations
+
+- Does **not** collect IMEI, IMSI, ICCID, subscriber ID, line1 number, or SMS/call metadata.
+- Does **not** request runtime permissions; only uses APIs callable without those prompts in typical configurations.
+- **Dual-SIM**: uses the default subscription’s `TelephonyManager` view (no per-SIM list).
+- **Anti-fraud**: this package only **reads** device context; it does not score risk or call remote services.
+
+## Testing
+
+**Dart** (model & JSON):
+
+```bash
+flutter test
+```
+
+**Android unit tests** (mapper / `phoneType` normalization), from the `example` app:
+
+```bash
+cd example/android
+./gradlew :telephony_context:testDebugUnitTest
+```
+
+Use a JDK version supported by Android Gradle Plugin (e.g. 17 or 21). If Gradle fails with an obscure message, align `JAVA_HOME` with the JDK used by Android Studio.
+
+**Manual checks** (recommended): physical phone with SIM, phone without SIM, emulator, dual-SIM device.
+
+## Example app
+
+```bash
+cd example
+flutter run
+```
+
+## Contributing
+
+See [CONTRIBUTING](https://github.com/6litz/telephony-context/blob/main/CONTRIBUTING.md). This project uses a [Code of Conduct](https://github.com/6litz/telephony-context/blob/main/CODE_OF_CONDUCT.md). Security: [SECURITY](https://github.com/6litz/telephony-context/blob/main/SECURITY.md).
+
+## License
+
+[BSD-3-Clause](https://github.com/6litz/telephony-context/blob/main/LICENSE).
